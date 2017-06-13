@@ -40,6 +40,7 @@ logging, better debugging/exception handling, simplification of code
 '''
 
 from lxml import etree #process xml files
+
 from StringIO import StringIO
 from random import randint 
 from netaddr import *  # all the heavy lifting
@@ -117,6 +118,8 @@ def processRanges(t,oCVS):
     t[1] = IPAddress(t[1])
     t.insert(0, int(t[0])) #create int representation for acruate sorting
     iplist = IPRange(t[1],t[2])
+    if iplist == IPRange('172.16.201.1','172.16.207.254'): #debug
+        print iplist
     length = len(iplist)
     if checkIfStandard(length):
         print("[+] Standard Range")
@@ -130,6 +133,7 @@ def processRanges(t,oCVS):
     else:
         print("[+] NON-Standard Range")
         nRange,cidr = nFixcidr(iplist)
+    
         t.append(cidr)
         t.append(nRange)
         t.append(int(t[2])-int(t[1]))
@@ -140,14 +144,33 @@ def processRanges(t,oCVS):
        
 def ndiff(fsSet):
     private = IPSet(['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'])
+
     diffSet = private - fsSet
+    xSet = IPSet()
+    xSet = private - diffSet
+    xSet = fsSet - xSet
+    #printing stats xSet should be empty unless you have non RFC 1918 addressing in your xml file.
+    print("[*] ================================================")
+    print("[*]                SUMMARY STATS TIME")
+    print("[*] ================================================")
+    print("[*] This set should be empty unless you have non-RFC1918 addressing: "+str(xSet)+","+str(len(xSet)))
+    print("[*] length of RFC1918 ranges: " + str(len(private)))
+    print("[*] length of ForeScout ranges: " + str(len(fsSet)))
+    print("[*] length of diffset ranges: " + str(len(diffSet)))  
+    print("[*] length of diffset + forescout ranges: " + str(len(diffSet) + len(fsSet)))
+    print("[*] delta of RFC1918 - diffset - forescout ranges): " + str(len(private) -len(diffSet) -len(fsSet)))
+    print("[*] ================================================")
+    print("[*]                        END")
+    print("[*] ================================================")  
     
-    return diffSet 
+    
+    return diffSet
     
 def nFixcidr(iplist):
     #Non-standard Range uses cidr_merge to determine subnets covered in the Range
     nRange = iplist
     listCidr = cidr_merge(list(nRange))
+    print(listCidr) #debug
     rangeList = IPSet()
     for cidr in listCidr:
         rangeList.add(cidr)
@@ -197,7 +220,7 @@ def writeXml(diffSet,xmlFile,xCVS):
  
     nId = generateID(18) # generate random segmentid
     tree = etree.parse(xmlFile)
-    segment = "GROUP[@NAME='%s']" % segment_name # Select the element we want to work on and append to
+    segment = ".//GROUP[@NAME='%s']" % segment_name # Select the element we want to work on and append to
     t = tree.find(segment) 
     subTag = etree.Element("GROUP", DECRIPTION="", NAME="UNASSIGNED", SEGMENT_ID=nId)
     diffSet = list(diffSet.iter_cidrs()) 
@@ -216,7 +239,7 @@ def writeXml(diffSet,xmlFile,xCVS):
         writeCSV(xCVS,vals)
         subText = etree.SubElement(subTag, "RANGES", RANGE=nRange) 
     
-    t.append(subTag)     
+    t.append(subTag)
     
     #append new- to updated xml
     newXml = output_path+"\\new-"+input_xml
@@ -347,6 +370,7 @@ def main():
         cNet = allNetData[recordNum][3]
         print("[+] Adding to Set: " + str(cNet))
         for nNet in cNet:
+            #if len(nNet) > 1: # ->>> uncomment if you don't want to add the /32 single hosts that are usually network/broadcast cidrs that get added during cidr_merge() for non standard nets
             fsSet.add(nNet)
         print("#ROUND: %s") % str(recordNum)
         #print("[+] Current Set %s: " + str(fsSet)) % str(recordNum)
