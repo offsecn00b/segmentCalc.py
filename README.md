@@ -1,7 +1,7 @@
 # segmentCalc.py
 Processes segments xml from ForeScout CounterACT and returns a modified xml including all RFC 1918 not explicitly defined in original file
 
-usagage: segmentCalc.py --xml filename --out directory --segment <segment name to append results in xml>
+usage: segmentCalc.py --xml filename --out directory --segment <segment name to append results in xml>
 
 Author: offsecNoob
 Date: 6/17/2017
