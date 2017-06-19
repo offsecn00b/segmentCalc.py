@@ -73,7 +73,7 @@ class _CSVWriter:
 
 
 
-
+#generate random id for new segment Group
 def generateID(n):
     nId = ''.join(["%s" % randint(0, 9) for num in range(0, n)])
     return nId
@@ -118,8 +118,6 @@ def processRanges(t,oCVS):
     t[1] = IPAddress(t[1])
     t.insert(0, int(t[0])) #create int representation for acruate sorting
     iplist = IPRange(t[1],t[2])
-    if iplist == IPRange('172.16.201.1','172.16.207.254'): #debug
-        print iplist
     length = len(iplist)
     if checkIfStandard(length):
         print("[+] Standard Range")
